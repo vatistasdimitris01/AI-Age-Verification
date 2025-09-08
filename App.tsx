@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { analyzeImageDetails } from './services/geminiService';
 import { AnalysisResult, AppState, LivenessDirection, LivenessStep } from './types';
-// FIX: Import `NormalizedLandmark` from `@mediapipe/tasks-vision` to resolve type incompatibility.
 import { FaceLandmarker, FilesetResolver, DrawingUtils, NormalizedLandmark } from '@mediapipe/tasks-vision';
 
 import IntegrationPage from './components/IntegrationPage';
@@ -12,8 +11,6 @@ import ErrorDisplay from './components/ErrorDisplay';
 const YAW_THRESHOLD = 20; // degrees for left/right
 const SMOOTHING_FACTOR = 0.4; // Lower value = more smoothing, more latency
 
-// FIX: Removed the custom `Landmark` interface and will use `NormalizedLandmark` from the library directly.
-
 const VerificationApp: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +18,7 @@ const VerificationApp: React.FC = () => {
   const [livenessStep, setLivenessStep] = useState<LivenessStep>('CENTER');
   const [livenessSequence, setLivenessSequence] = useState<LivenessDirection[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isCameraReady, setIsCameraReady] = useState(false);
 
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [isTracking, setIsTracking] = useState(false);
@@ -32,7 +30,6 @@ const VerificationApp: React.FC = () => {
   const animationFrameId = useRef<number | null>(null);
   const capturedFrames = useRef<string[]>([]);
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
-  // FIX: Updated the ref type to `NormalizedLandmark[][]` to match the data structure from MediaPipe and the expectations of `drawConnectors`.
   const smoothedLandmarksRef = useRef<NormalizedLandmark[][]>([]);
   
   const isInsideIframe = window.self !== window.top;
@@ -48,6 +45,7 @@ const VerificationApp: React.FC = () => {
     capturedFrames.current = [];
     smoothedLandmarksRef.current = [];
     setIsTracking(false);
+    setIsCameraReady(false);
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
@@ -75,6 +73,9 @@ const VerificationApp: React.FC = () => {
         streamRef.current = stream;
         if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            videoRef.current.oncanplay = () => {
+              setIsCameraReady(true);
+            };
         }
       } catch (err) {
         setError("Could not access webcam. Please enable it in your browser settings.");
@@ -251,10 +252,6 @@ const VerificationApp: React.FC = () => {
 
 
   const startLivenessCheck = async () => {
-    if (!videoRef.current || videoRef.current.readyState < 3) {
-      setError("Camera is not ready yet. Please wait a moment and try again.");
-      return;
-    };
     setAppState('INITIALIZING');
     setError(null);
     
@@ -299,48 +296,47 @@ const VerificationApp: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-8 ${isInsideIframe ? 'bg-transparent' : ''}`}>
-      <div className="w-full max-w-lg mx-auto">
-        {!isInsideIframe && (
-            <header className="w-full mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
-                <div className="flex items-center gap-3 mb-4 sm:mb-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.002L10 18.451l7.834-13.449A11.954 11.954 0 0110 1.944zM10 4.167L4.416 12.833h11.168L10 4.167z" clipRule="evenodd" />
-                      <path d="M10 1.944A11.954 11.954 0 012.166 5.002L10 18.451l7.834-13.449A11.954 11.954 0 0110 1.944zM10 4.167L4.416 12.833h11.168L10 4.167z" opacity="0.3" />
-                    </svg>
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Age Verification</h1>
-                </div>
-                <a href="/integration" className="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors">
-                  Integration Guide
-                </a>
-            </header>
-        )}
-
-        <main className="w-full flex-grow flex flex-col items-center justify-center">
-            {appState === 'IDLE' && !error && (
-                <p className="text-gray-600 mb-8 max-w-sm text-center">
-                    This secure system uses a liveness check and AI analysis to verify your age without storing your personal data.
-                </p>
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 ${isInsideIframe ? 'bg-transparent' : 'bg-gray-50'}`}>
+        <div className="w-full max-w-md mx-auto">
+            {!isInsideIframe && (
+                <header className="w-full mb-6 text-center">
+                    <div className="inline-flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Secure Age Verification</h1>
+                    </div>
+                </header>
             )}
 
-            <ErrorDisplay error={error} onReset={resetState} />
+            <main className="w-full bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center min-h-[680px] p-4 sm:p-8">
+                <ErrorDisplay error={error} onReset={resetState} />
 
-            {appState === 'COMPLETE' && analysisResult ? (
-              <ResultsDisplay analysisResult={analysisResult} onReset={resetState} />
-            ) : (
-              <VerificationUI
-                  appState={appState}
-                  livenessStep={livenessStep}
-                  livenessSequence={livenessSequence}
-                  currentStepIndex={currentStepIndex}
-                  feedbackMessage={feedbackMessage}
-                  videoRef={videoRef}
-                  canvasRef={canvasRef}
-                  onStartLivenessCheck={startLivenessCheck}
-              />
+                {appState === 'COMPLETE' && analysisResult ? (
+                  <ResultsDisplay analysisResult={analysisResult} onReset={resetState} />
+                ) : (
+                  <VerificationUI
+                      appState={appState}
+                      livenessStep={livenessStep}
+                      livenessSequence={livenessSequence}
+                      currentStepIndex={currentStepIndex}
+                      feedbackMessage={feedbackMessage}
+                      videoRef={videoRef}
+                      canvasRef={canvasRef}
+                      onStartLivenessCheck={startLivenessCheck}
+                      isCameraReady={isCameraReady}
+                      error={error}
+                  />
+                )}
+            </main>
+             {!isInsideIframe && (
+                <footer className="mt-6 text-center text-sm text-gray-500">
+                    <a href="/integration" className="hover:underline text-blue-600 font-medium transition-colors">
+                      View Integration Guide
+                    </a>
+                </footer>
             )}
-        </main>
-      </div>
+        </div>
     </div>
   );
 };
