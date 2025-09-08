@@ -10,14 +10,20 @@ export const analyzeImageDetails = async (frames: string[]): Promise<AnalysisRes
             body: JSON.stringify({ frames }),
         });
 
-        const result = await response.json();
-
         if (!response.ok) {
-            // Use the error message from the API if available, otherwise a generic one.
-            throw new Error(result.error || 'Failed to analyze the image.');
+            let errorBody;
+            try {
+                // Try to parse a JSON error response from the API.
+                errorBody = await response.json();
+            } catch (e) {
+                // If it's not JSON, it's likely a server error page.
+                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+            }
+            // Use the error message from the API if available.
+            throw new Error(errorBody.error || 'Failed to analyze the image.');
         }
         
-        const resultJson = result as AnalysisResult;
+        const resultJson = await response.json() as AnalysisResult;
 
         if (resultJson.livenessVerified === false) {
             throw new Error("Liveness check failed. Please follow the instructions carefully and ensure you are in a well-lit environment.");
