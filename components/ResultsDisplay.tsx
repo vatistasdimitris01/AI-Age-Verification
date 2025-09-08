@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
 import { LEGAL_AGE } from '../constants';
 
@@ -27,6 +27,7 @@ const XCircleIcon = () => (
 );
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ analysisResult, onReset }) => {
+    const [showMore, setShowMore] = useState(false);
     const isOfLegalAge = analysisResult.age !== null && analysisResult.age >= LEGAL_AGE;
     
     const statusConfig = isOfLegalAge
@@ -67,6 +68,27 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ analysisResult, onReset
                 </div>
             </div>
             
+            <div className="w-full mt-4">
+                <button
+                    onClick={() => setShowMore(!showMore)}
+                    className="w-full text-sm font-semibold text-blue-600 hover:text-blue-800 p-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    {showMore ? 'Hide Advanced Details' : 'Show Advanced Details'}
+                </button>
+
+                {showMore && (
+                    <div className="mt-4 text-left animate-fade-in">
+                        <div className="grid grid-cols-2 gap-3">
+                            <DetailItem label="Dominant Emotion" value={analysisResult.emotion ?? 'N/A'} />
+                            <DetailItem label="Estimated Ethnicity" value={analysisResult.ethnicity ?? 'N/A'} />
+                            <DetailItem label="Skin Tone" value={analysisResult.skinTone ?? 'N/A'} />
+                            <DetailItem label="Eye Color" value={analysisResult.eyeColor ?? 'N/A'} />
+                            <DetailItem label="Distinguishing Marks" value={analysisResult.distinguishingMarks ?? 'N/A'} />
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <button
                 onClick={onReset}
                 className="mt-8 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

@@ -9,6 +9,7 @@ import ResultsDisplay from './components/ResultsDisplay';
 import ErrorDisplay from './components/ErrorDisplay';
 
 const YAW_THRESHOLD = 20; // degrees for left/right
+const PITCH_THRESHOLD = 15; // degrees for up/down
 const SMOOTHING_FACTOR = 0.4; // Lower value = more smoothing, more latency
 
 const VerificationApp: React.FC = () => {
@@ -159,17 +160,25 @@ const VerificationApp: React.FC = () => {
                 const matrix = results.facialTransformationMatrixes?.[0]?.data;
                 if (matrix) {
                     const yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+                    const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
 
                     if (livenessStep === 'CENTER') {
-                        if (Math.abs(yaw) < 10) {
+                        if (Math.abs(yaw) < 10 && Math.abs(pitch) < 10) {
                           captureFrame();
                           setLivenessStep(livenessSequence[0]);
                         }
                     } else if (livenessStep !== 'DONE') {
                         const requiredDirection = livenessSequence[currentStepIndex];
-                        const movementDetected =
-                            (requiredDirection === 'LEFT' && yaw > YAW_THRESHOLD) ||
-                            (requiredDirection === 'RIGHT' && yaw < -YAW_THRESHOLD);
+                        let movementDetected = false;
+                        if (requiredDirection === 'LEFT') {
+                            movementDetected = yaw > YAW_THRESHOLD;
+                        } else if (requiredDirection === 'RIGHT') {
+                            movementDetected = yaw < -YAW_THRESHOLD;
+                        } else if (requiredDirection === 'UP') {
+                            movementDetected = pitch > PITCH_THRESHOLD;
+                        } else if (requiredDirection === 'DOWN') {
+                            movementDetected = pitch < -PITCH_THRESHOLD;
+                        }
                         
                         if(movementDetected) {
                             captureFrame();
@@ -255,13 +264,14 @@ const VerificationApp: React.FC = () => {
     setAppState('INITIALIZING');
     setError(null);
     
-    const directions: LivenessDirection[] = ['LEFT', 'RIGHT'];
-    // Ensure the sequence isn't the same direction twice in a row for a better check
-    const firstDirection = directions[Math.floor(Math.random() * directions.length)];
-    const secondDirection = firstDirection === 'LEFT' ? 'RIGHT' : 'LEFT';
-    const randomSequence: LivenessDirection[] = [firstDirection, secondDirection];
+    const directions: LivenessDirection[] = ['LEFT', 'RIGHT', 'UP', 'DOWN'];
+    // Fisher-Yates shuffle for a random sequence
+    for (let i = directions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [directions[i], directions[j]] = [directions[j], directions[i]];
+    }
     
-    setLivenessSequence(randomSequence);
+    setLivenessSequence(directions);
     setCurrentStepIndex(0);
     setLivenessStep('CENTER');
   

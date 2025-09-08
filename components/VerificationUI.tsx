@@ -5,22 +5,33 @@ const LIVENESS_INSTRUCTIONS: Record<LivenessStep, string> = {
   CENTER: 'Look straight at the camera',
   LEFT: 'Turn your head to your left',
   RIGHT: 'Turn your head to your right',
+  UP: 'Tilt your head up',
+  DOWN: 'Tilt your head down',
   DONE: 'Processing...'
 };
 
-const ArrowIcon = ({ direction }: { direction: LivenessDirection }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={`w-10 h-10 text-white transition-transform duration-500 animate-pulse ${direction === 'LEFT' ? 'transform -scale-x-100' : ''}`}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2.5}
-    aria-hidden="true"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-  </svg>
-);
+const ArrowIcon = ({ direction }: { direction: LivenessDirection }) => {
+    const rotationClass = {
+        LEFT: 'transform -scale-x-100',
+        RIGHT: '',
+        UP: 'transform -rotate-90',
+        DOWN: 'transform rotate-90'
+    }[direction];
+
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-10 h-10 text-white transition-transform duration-500 animate-pulse ${rotationClass}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            aria-hidden="true"
+        >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+    );
+};
 
 const ProgressStep = ({ label, active }: { label: string, active: boolean }) => (
     <div className="flex flex-col items-center">
@@ -112,7 +123,7 @@ const VerificationUI: React.FC<VerificationUIProps> = ({
                         <p className="text-white text-xl font-bold drop-shadow-md">{instruction}</p>
                         {livenessStep !== 'CENTER' && (
                             <div className="mt-6">
-                                <ArrowIcon direction={livenessStep} />
+                                <ArrowIcon direction={livenessStep as LivenessDirection} />
                             </div>
                         )}
                     </div>

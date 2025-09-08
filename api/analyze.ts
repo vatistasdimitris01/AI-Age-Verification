@@ -28,7 +28,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         }));
 
         const prompt = `Perform a strict, two-step analysis on the person in this sequence of images.
-        Step 1: Liveness & Consistency Check. First, verify these images show the same, real-life person performing a specific, guided, and random sequence of head movements (looking center, then following on-screen prompts like left or right). Are you confident this is a live, genuine, and dynamic check and not a spoof or static image?
+        Step 1: Liveness & Consistency Check. First, verify these images show the same, real-life person performing a specific, guided, and random sequence of head movements (e.g., looking center, then left, right, up, down). Are you confident this is a live, genuine, and dynamic check and not a spoof or static image? The sequence must be followed correctly.
         Step 2: Detailed Analysis. If and only if the liveness check passes, analyze the clearest, front-facing image to estimate their details.
         Respond ONLY with a valid JSON object. The object must contain:
         - 'livenessVerified' (boolean): True if the Step 1 check passed, otherwise false.
@@ -38,7 +38,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
         - 'wearingGlasses' (boolean): True if wearing glasses. Null if liveness check failed.
         - 'facialHair' (string): Description of facial hair. Null if liveness check failed.
         - 'hairColor' (string): Estimated hair color. Null if liveness check failed.
-        - 'faceShape' (string): Estimated face shape (e.g., 'Oval', 'Round', 'Square'). Null if liveness check failed.`;
+        - 'faceShape' (string): Estimated face shape (e.g., 'Oval', 'Round', 'Square'). Null if liveness check failed.
+        - 'ethnicity' (string): Estimated ethnicity. Null if liveness check failed.
+        - 'skinTone' (string): Estimated skin tone. Null if liveness check failed.
+        - 'eyeColor' (string): Estimated eye color. Null if liveness check failed.
+        - 'distinguishingMarks' (string): Any distinguishing marks like moles or scars. Null if liveness check failed.`;
 
         const geminiResponse = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -56,8 +60,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
                         facialHair: { type: Type.STRING, description: "Description of the person's facial hair." },
                         hairColor: { type: Type.STRING, description: "Estimated hair color of the person." },
                         faceShape: { type: Type.STRING, description: "Estimated face shape of the person." },
+                        ethnicity: { type: Type.STRING, description: "Estimated ethnicity of the person." },
+                        skinTone: { type: Type.STRING, description: "Estimated skin tone of the person." },
+                        eyeColor: { type: Type.STRING, description: "Estimated eye color of the person." },
+                        distinguishingMarks: { type: Type.STRING, description: "Description of any distinguishing marks." },
                     },
-                    required: ["livenessVerified", "age", "gender", "emotion", "wearingGlasses", "facialHair", "hairColor", "faceShape"],
+                    required: ["livenessVerified", "age", "gender", "emotion", "wearingGlasses", "facialHair", "hairColor", "faceShape", "ethnicity", "skinTone", "eyeColor", "distinguishingMarks"],
                 },
             },
         });
