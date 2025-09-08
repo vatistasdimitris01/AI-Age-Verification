@@ -2,12 +2,16 @@
   "name": "ai-age-verification",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "build": "esbuild index.tsx --bundle --outfile=index.js --jsx=automatic"
+  },
   "dependencies": {
     "@google/genai": "^1.17.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@vercel/node": "^3.0.0",
+    "esbuild": "^0.20.2",
     "typescript": "^5.3.3"
   }
 }
