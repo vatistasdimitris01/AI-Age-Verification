@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "esbuild index.tsx --bundle --outfile=index.js --jsx=automatic"
+    "build": "esbuild index.tsx --bundle --outfile=index.js --jsx=automatic --external:react --external:react-dom/client --external:@mediapipe/tasks-vision"
   },
   "dependencies": {
     "@google/genai": "^1.17.0"
