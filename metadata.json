@@ -1,0 +1,7 @@
+{
+  "name": "Copy of AI Age Verification",
+  "description": "An application that uses your camera and AI to estimate your age, gender, and emotion for age verification purposes. Your image is sent for analysis and is not stored.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
