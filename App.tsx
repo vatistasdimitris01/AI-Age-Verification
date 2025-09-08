@@ -185,7 +185,7 @@ const VerificationApp: React.FC = () => {
             }
         } else {
             smoothedLandmarksRef.current = [];
-            setFeedbackMessage("Position your face in the frame.");
+            setFeedbackMessage("Position your face in the oval.");
         }
         context.restore();
     } catch (e) {
@@ -259,10 +259,11 @@ const VerificationApp: React.FC = () => {
     setError(null);
     
     const directions: LivenessDirection[] = ['LEFT', 'RIGHT'];
-    const randomSequence: LivenessDirection[] = [
-        directions[Math.floor(Math.random() * directions.length)],
-        directions[Math.floor(Math.random() * directions.length)]
-    ];
+    // Ensure the sequence isn't the same direction twice in a row for a better check
+    const firstDirection = directions[Math.floor(Math.random() * directions.length)];
+    const secondDirection = firstDirection === 'LEFT' ? 'RIGHT' : 'LEFT';
+    const randomSequence: LivenessDirection[] = [firstDirection, secondDirection];
+    
     setLivenessSequence(randomSequence);
     setCurrentStepIndex(0);
     setLivenessStep('CENTER');
@@ -298,34 +299,48 @@ const VerificationApp: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center p-4 sm:p-8 ${isInsideIframe ? 'bg-transparent' : 'bg-gray-100'}`}>
-      <header className="w-full max-w-4xl mb-8 flex justify-between items-center">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Age Verification</h1>
-        <a href="/integration" className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-          Integration Guide
-        </a>
-      </header>
-
-      <main className="w-full flex-grow flex flex-col items-center justify-center">
-        <p className="text-gray-500 mb-8 max-w-sm text-center">This system uses a secure liveness check to verify your age.</p>
-        
-        <ErrorDisplay error={error} onReset={resetState} />
-
-        {appState === 'COMPLETE' && analysisResult ? (
-          <ResultsDisplay analysisResult={analysisResult} onReset={resetState} />
-        ) : (
-          <VerificationUI
-              appState={appState}
-              livenessStep={livenessStep}
-              livenessSequence={livenessSequence}
-              currentStepIndex={currentStepIndex}
-              feedbackMessage={feedbackMessage}
-              videoRef={videoRef}
-              canvasRef={canvasRef}
-              onStartLivenessCheck={startLivenessCheck}
-          />
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-8 ${isInsideIframe ? 'bg-transparent' : ''}`}>
+      <div className="w-full max-w-lg mx-auto">
+        {!isInsideIframe && (
+            <header className="w-full mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+                <div className="flex items-center gap-3 mb-4 sm:mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.002L10 18.451l7.834-13.449A11.954 11.954 0 0110 1.944zM10 4.167L4.416 12.833h11.168L10 4.167z" clipRule="evenodd" />
+                      <path d="M10 1.944A11.954 11.954 0 012.166 5.002L10 18.451l7.834-13.449A11.954 11.954 0 0110 1.944zM10 4.167L4.416 12.833h11.168L10 4.167z" opacity="0.3" />
+                    </svg>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Age Verification</h1>
+                </div>
+                <a href="/integration" className="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors">
+                  Integration Guide
+                </a>
+            </header>
         )}
-      </main>
+
+        <main className="w-full flex-grow flex flex-col items-center justify-center">
+            {appState === 'IDLE' && !error && (
+                <p className="text-gray-600 mb-8 max-w-sm text-center">
+                    This secure system uses a liveness check and AI analysis to verify your age without storing your personal data.
+                </p>
+            )}
+
+            <ErrorDisplay error={error} onReset={resetState} />
+
+            {appState === 'COMPLETE' && analysisResult ? (
+              <ResultsDisplay analysisResult={analysisResult} onReset={resetState} />
+            ) : (
+              <VerificationUI
+                  appState={appState}
+                  livenessStep={livenessStep}
+                  livenessSequence={livenessSequence}
+                  currentStepIndex={currentStepIndex}
+                  feedbackMessage={feedbackMessage}
+                  videoRef={videoRef}
+                  canvasRef={canvasRef}
+                  onStartLivenessCheck={startLivenessCheck}
+              />
+            )}
+        </main>
+      </div>
     </div>
   );
 };
