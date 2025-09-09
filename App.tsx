@@ -76,7 +76,12 @@ const VerificationApp: React.FC = () => {
         streamRef.current = stream;
         if (videoRef.current) {
             videoRef.current.srcObject = stream;
-            videoRef.current.oncanplay = () => {
+            // Use onloadedmetadata and an explicit play() call to ensure
+            // video playback on mobile devices like iOS.
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current?.play().catch(e => {
+                console.warn("Video play failed, browser might block it.", e);
+              });
               setIsCameraReady(true);
             };
         }
@@ -136,11 +141,6 @@ const VerificationApp: React.FC = () => {
         const results = landmarker.detectForVideo(video, performance.now());
         context.save();
         context.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Manually mirror the canvas context to create a "selfie" view.
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (results.faceLandmarks && results.faceLandmarks.length > 0) {
             const newLandmarks = results.faceLandmarks.map(face => face.map(landmark => ({...landmark})));

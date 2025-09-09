@@ -13,6 +13,16 @@
       body {
         font-family: 'Inter', sans-serif;
       }
+      /* Hide native video controls, which can appear on some mobile browsers */
+      video::-webkit-media-controls {
+        display: none !important;
+      }
+      video::-webkit-media-controls-enclosure {
+        display: none !important;
+      }
+      video::-webkit-media-controls-panel {
+        display: none !important;
+      }
     </style>
   <script type="importmap">
 {
