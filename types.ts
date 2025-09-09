@@ -6,11 +6,18 @@ export interface AnalysisResult {
   facialHair: string | null;
   hairColor: string | null;
   faceShape: string | null;
-  livenessVerified: boolean | null;
+  livenessVerified?: boolean | null;
   ethnicity: string | null;
   skinTone: string | null;
   eyeColor: string | null;
   distinguishingMarks: string | null;
+}
+
+export interface VerificationDecision {
+    verificationPassed: boolean;
+    isConsistent: boolean;
+    finalAnalysis: AnalysisResult | null;
+    reason: string;
 }
 
 export type AppState = 'IDLE' | 'INITIALIZING' | 'LIVENESS_CHECK' | 'ANALYZING' | 'COMPLETE';

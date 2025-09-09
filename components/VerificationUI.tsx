@@ -55,6 +55,7 @@ interface VerificationUIProps {
     livenessSequence: LivenessDirection[];
     currentStepIndex: number;
     feedbackMessage: string | null;
+    analysisProgress: string | null;
     videoRef: React.RefObject<HTMLVideoElement>;
     canvasRef: React.RefObject<HTMLCanvasElement>;
     onStartLivenessCheck: () => void;
@@ -68,6 +69,7 @@ const VerificationUI: React.FC<VerificationUIProps> = ({
     livenessSequence,
     currentStepIndex,
     feedbackMessage,
+    analysisProgress,
     videoRef,
     canvasRef,
     onStartLivenessCheck,
@@ -140,7 +142,7 @@ const VerificationUI: React.FC<VerificationUIProps> = ({
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-center">
                 <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
                 <p className="mt-4 text-lg text-white font-semibold">
-                    {appState === 'INITIALIZING' ? 'Initializing...' : 'Analyzing...'}
+                    {analysisProgress || (appState === 'INITIALIZING' ? 'Initializing...' : 'Analyzing...')}
                 </p>
               </div>
             )}

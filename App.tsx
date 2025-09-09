@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { analyzeImageDetails } from './services/geminiService';
+import { performSecureVerification } from './services/geminiService';
 import { AnalysisResult, AppState, LivenessDirection, LivenessStep } from './types';
 import { FaceLandmarker, FilesetResolver, DrawingUtils, NormalizedLandmark } from '@mediapipe/tasks-vision';
 
@@ -22,6 +22,7 @@ const VerificationApp: React.FC = () => {
   const [isCameraReady, setIsCameraReady] = useState(false);
 
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState<string | null>(null);
   const [isTracking, setIsTracking] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -43,6 +44,7 @@ const VerificationApp: React.FC = () => {
     setLivenessSequence([]);
     setCurrentStepIndex(0);
     setFeedbackMessage(null);
+    setAnalysisProgress(null);
     capturedFrames.current = [];
     smoothedLandmarksRef.current = [];
     setIsTracking(false);
@@ -97,7 +99,7 @@ const VerificationApp: React.FC = () => {
   }, [setupCamera]);
   
   const captureFrame = useCallback(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || capturedFrames.current.length >= 5) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
@@ -229,17 +231,8 @@ const VerificationApp: React.FC = () => {
         setError(null);
         setFeedbackMessage(null);
         
-        analyzeImageDetails(capturedFrames.current)
+        performSecureVerification(capturedFrames.current, setAnalysisProgress)
             .then(result => {
-                if (result.livenessVerified === false) {
-                    const livenessError = "Liveness check failed. Please try again and follow the instructions carefully.";
-                    setError(livenessError);
-                    setAppState('IDLE');
-                    if (isInsideIframe) {
-                        window.parent.postMessage({ status: 'ERROR', error: livenessError }, '*');
-                    }
-                    return;
-                }
                 setAnalysisResult(result);
                 if (isInsideIframe) {
                     window.parent.postMessage({ status: 'SUCCESS', result }, '*');
@@ -255,6 +248,7 @@ const VerificationApp: React.FC = () => {
             .finally(() => {
               setAppState('COMPLETE');
               setIsTracking(false);
+              setAnalysisProgress(null);
             });
     }
   }, [livenessStep, appState, isInsideIframe]);
@@ -263,9 +257,9 @@ const VerificationApp: React.FC = () => {
   const startLivenessCheck = async () => {
     setAppState('INITIALIZING');
     setError(null);
+    capturedFrames.current = [];
     
     const directions: LivenessDirection[] = ['LEFT', 'RIGHT', 'UP', 'DOWN'];
-    // Fisher-Yates shuffle for a random sequence
     for (let i = directions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [directions[i], directions[j]] = [directions[j], directions[i]];
@@ -331,6 +325,7 @@ const VerificationApp: React.FC = () => {
                       livenessSequence={livenessSequence}
                       currentStepIndex={currentStepIndex}
                       feedbackMessage={feedbackMessage}
+                      analysisProgress={analysisProgress}
                       videoRef={videoRef}
                       canvasRef={canvasRef}
                       onStartLivenessCheck={startLivenessCheck}

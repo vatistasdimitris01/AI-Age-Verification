@@ -8,9 +8,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
 
     try {
-        const { frames } = request.body;
-        if (!frames || !Array.isArray(frames) || frames.length === 0) {
-            return response.status(400).json({ error: 'Bad Request: Missing or invalid frames' });
+        const { frame } = request.body;
+        if (!frame || typeof frame !== 'string') {
+            return response.status(400).json({ error: 'Bad Request: Missing or invalid frame' });
         }
 
         const apiKey = process.env.API_KEY;
@@ -20,39 +20,24 @@ export default async function handler(request: VercelRequest, response: VercelRe
         }
         const ai = new GoogleGenAI({ apiKey });
 
-        const imageParts = frames.map((frame: string) => ({
+        const imagePart = {
             inlineData: {
                 data: frame,
                 mimeType: "image/jpeg",
             },
-        }));
+        };
 
-        const prompt = `Perform a strict, two-step analysis on the person in this sequence of images.
-        Step 1: Liveness & Consistency Check. First, verify these images show the same, real-life person performing a specific, guided, and random sequence of head movements (e.g., looking center, then left, right, up, down). Are you confident this is a live, genuine, and dynamic check and not a spoof or static image? The sequence must be followed correctly.
-        Step 2: Detailed Analysis. If and only if the liveness check passes, analyze the clearest, front-facing image to estimate their details.
-        Respond ONLY with a valid JSON object. The object must contain:
-        - 'livenessVerified' (boolean): True if the Step 1 check passed, otherwise false.
-        - 'age' (number): Estimated age. Null if liveness check failed.
-        - 'gender' (string): Estimated gender. Null if liveness check failed.
-        - 'emotion' (string): Estimated emotion. Null if liveness check failed.
-        - 'wearingGlasses' (boolean): True if wearing glasses. Null if liveness check failed.
-        - 'facialHair' (string): Description of facial hair. Null if liveness check failed.
-        - 'hairColor' (string): Estimated hair color. Null if liveness check failed.
-        - 'faceShape' (string): Estimated face shape (e.g., 'Oval', 'Round', 'Square'). Null if liveness check failed.
-        - 'ethnicity' (string): Estimated ethnicity. Null if liveness check failed.
-        - 'skinTone' (string): Estimated skin tone. Null if liveness check failed.
-        - 'eyeColor' (string): Estimated eye color. Null if liveness check failed.
-        - 'distinguishingMarks' (string): Any distinguishing marks like moles or scars. Null if liveness check failed.`;
+        const prompt = `Analyze the person in this image and estimate their details.
+        Respond ONLY with a valid JSON object containing the following fields: 'age', 'gender', 'emotion', 'wearingGlasses', 'facialHair', 'hairColor', 'faceShape', 'ethnicity', 'skinTone', 'eyeColor', 'distinguishingMarks'.`;
 
         const geminiResponse = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: { parts: [...imageParts, { text: prompt }] },
+            contents: { parts: [imagePart, { text: prompt }] },
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
-                        livenessVerified: { type: Type.BOOLEAN, description: "Whether the liveness check was successful." },
                         age: { type: Type.INTEGER, description: "Estimated age of the person." },
                         gender: { type: Type.STRING, description: "Estimated gender of the person." },
                         emotion: { type: Type.STRING, description: "Estimated dominant emotion of the person." },
@@ -65,7 +50,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
                         eyeColor: { type: Type.STRING, description: "Estimated eye color of the person." },
                         distinguishingMarks: { type: Type.STRING, description: "Description of any distinguishing marks." },
                     },
-                    required: ["livenessVerified", "age", "gender", "emotion", "wearingGlasses", "facialHair", "hairColor", "faceShape", "ethnicity", "skinTone", "eyeColor", "distinguishingMarks"],
+                    required: ["age", "gender", "emotion", "wearingGlasses", "facialHair", "hairColor", "faceShape", "ethnicity", "skinTone", "eyeColor", "distinguishingMarks"],
                 },
             },
         });
