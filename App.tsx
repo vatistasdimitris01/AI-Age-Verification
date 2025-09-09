@@ -11,6 +11,7 @@ import ErrorDisplay from './components/ErrorDisplay';
 const YAW_THRESHOLD = 20; // degrees for left/right
 const PITCH_THRESHOLD = 15; // degrees for up/down
 const SMOOTHING_FACTOR = 0.4; // Lower value = more smoothing, more latency
+const NO_FACE_THRESHOLD = 30; // Number of frames to wait before showing "no face" message.
 
 const VerificationApp: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -33,6 +34,7 @@ const VerificationApp: React.FC = () => {
   const capturedFrames = useRef<string[]>([]);
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
   const smoothedLandmarksRef = useRef<NormalizedLandmark[][]>([]);
+  const noFaceCounterRef = useRef(0);
   
   const isInsideIframe = window.self !== window.top;
 
@@ -49,6 +51,7 @@ const VerificationApp: React.FC = () => {
     smoothedLandmarksRef.current = [];
     setIsTracking(false);
     setIsCameraReady(false);
+    noFaceCounterRef.current = 0;
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
@@ -143,6 +146,7 @@ const VerificationApp: React.FC = () => {
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+            noFaceCounterRef.current = 0;
             const newLandmarks = results.faceLandmarks.map(face => face.map(landmark => ({...landmark})));
             
             if (smoothedLandmarksRef.current.length === 0) {
@@ -201,8 +205,11 @@ const VerificationApp: React.FC = () => {
                 }
             }
         } else {
-            smoothedLandmarksRef.current = [];
-            setFeedbackMessage("Position your face in the oval.");
+            noFaceCounterRef.current++;
+            if (noFaceCounterRef.current > NO_FACE_THRESHOLD) {
+                smoothedLandmarksRef.current = [];
+                setFeedbackMessage("Position your face in the oval.");
+            }
         }
         context.restore();
     } catch (e) {
@@ -233,6 +240,7 @@ const VerificationApp: React.FC = () => {
   useEffect(() => {
     if (livenessStep === 'DONE' && appState === 'LIVENESS_CHECK') {
         setAppState('ANALYZING');
+        setIsTracking(false); // Stop tracking before starting analysis
         setError(null);
         setFeedbackMessage(null);
         
@@ -252,7 +260,6 @@ const VerificationApp: React.FC = () => {
             })
             .finally(() => {
               setAppState('COMPLETE');
-              setIsTracking(false);
               setAnalysisProgress(null);
             });
     }
@@ -263,6 +270,7 @@ const VerificationApp: React.FC = () => {
     setAppState('INITIALIZING');
     setError(null);
     capturedFrames.current = [];
+    noFaceCounterRef.current = 0;
     
     const directions: LivenessDirection[] = ['LEFT', 'RIGHT', 'UP', 'DOWN'];
     for (let i = directions.length - 1; i > 0; i--) {
