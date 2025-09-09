@@ -4,7 +4,8 @@ import { LEGAL_AGE } from '../constants';
 const IntegrationPage = () => {
     const vercelUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-deployment-url.vercel.app';
     const [integrationType, setIntegrationType] = useState<'frontend' | 'backend'>('frontend');
-    
+    const [backendLanguage, setBackendLanguage] = useState<'nodejs' | 'curl'>('nodejs');
+
     const frontendSnippet = `<!-- 1. Add the iframe to your page -->
 <div id="age-verification-container" style="width: 450px; height: 750px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
   <iframe
@@ -40,7 +41,7 @@ const IntegrationPage = () => {
   });
 <\/script>`;
 
-    const backendSnippet = `// This is a Node.js example using fetch.
+    const nodejsSnippet = `// This is a Node.js example using fetch.
 const API_URL = '${vercelUrl}/api/age';
 
 // In a real application, you would capture these from a user's camera
@@ -86,10 +87,28 @@ async function verifyUserAge(frames) {
 
 verifyUserAge(imageFrames);`;
 
+    const curlSnippet = `# This is a cURL example.
+# It can be adapted to any programming language.
+# Replace <base64_image_..._> with actual base64 encoded image data.
+
+curl -X POST "${vercelUrl}/api/age" \\
+     -H "Content-Type: application/json" \\
+     -d '{
+           "frames": [
+             "<base64_image_frame_1>",
+             "<base64_image_frame_2>",
+             "..."
+           ]
+         }'`;
 
     const [copied, setCopied] = useState(false);
     const copyToClipboard = () => {
-        const snippet = integrationType === 'frontend' ? frontendSnippet : backendSnippet;
+        let snippet;
+        if (integrationType === 'frontend') {
+            snippet = frontendSnippet;
+        } else {
+            snippet = backendLanguage === 'nodejs' ? nodejsSnippet : curlSnippet;
+        }
         navigator.clipboard.writeText(snippet);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -105,6 +124,24 @@ verifyUserAge(imageFrames);`;
             {label}
         </button>
     );
+    
+    const LanguageButton = ({ lang, label }: { lang: 'nodejs' | 'curl', label: string }) => (
+        <button
+            onClick={() => setBackendLanguage(lang)}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                backendLanguage === lang ? 'bg-blue-500 text-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
+    const getSnippet = () => {
+        if (integrationType === 'frontend') {
+            return frontendSnippet;
+        }
+        return backendLanguage === 'nodejs' ? nodejsSnippet : curlSnippet;
+    }
 
     return (
         <div className="min-h-screen w-full bg-gray-100 font-sans">
@@ -142,10 +179,18 @@ verifyUserAge(imageFrames);`;
                             </div>
                         </div>
                         <div className="bg-gray-800 text-white p-4 relative font-mono text-sm">
-                             <button onClick={copyToClipboard} className="absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-3 rounded-md z-10 transition-colors">
-                                {copied ? 'Copied!' : 'Copy'}
-                            </button>
-                            <pre className="overflow-x-auto"><code className="whitespace-pre-wrap text-xs sm:text-sm">{integrationType === 'frontend' ? frontendSnippet : backendSnippet}</code></pre>
+                            <div className="absolute top-3 right-3 flex flex-wrap justify-end gap-2 z-10">
+                                {integrationType === 'backend' && (
+                                    <div className="flex-shrink-0 bg-gray-900 p-1 rounded-lg flex gap-1">
+                                        <LanguageButton lang="nodejs" label="Node.js" />
+                                        <LanguageButton lang="curl" label="cURL" />
+                                    </div>
+                                )}
+                                <button onClick={copyToClipboard} className="bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-3 rounded-md transition-colors">
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                            <pre className="overflow-x-auto pt-12"><code className="whitespace-pre-wrap text-xs sm:text-sm">{getSnippet()}</code></pre>
                         </div>
                     </div>
                     
