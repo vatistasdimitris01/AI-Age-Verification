@@ -41,7 +41,7 @@ const IntegrationPage = () => {
 <\/script>`;
 
     const backendSnippet = `// This is a Node.js example using fetch.
-const API_URL = '${vercelUrl}/api/verify-age';
+const API_URL = '${vercelUrl}/api/age';
 
 // In a real application, you would capture these from a user's camera
 // during a liveness-checking process on your frontend and send them to your server.
@@ -188,7 +188,7 @@ verifyUserAge(imageFrames);`;
                                      <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">2</div>
                                     <div>
                                         <h3 className="font-bold text-gray-800">Call API From Your Backend</h3>
-                                        <p className="text-gray-600 mt-1">Send the array of base64 image frames from your frontend to your server. From your server, make a secure POST request to the <code>/api/verify-age</code> endpoint.</p>
+                                        <p className="text-gray-600 mt-1">Send the array of base64 image frames from your frontend to your server. From your server, make a secure POST request to the <code>/api/age</code> endpoint.</p>
                                     </div>
                                 </li>
                                 <li className="flex items-start gap-4">
