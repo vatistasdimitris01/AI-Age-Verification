@@ -22,8 +22,19 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
         const prompt = `You are a security verification agent. You have received two independent analyses (Analysis A and Analysis B) of a person, generated from two different images of them taken seconds apart during a verification process.
         Your task is to determine if these two analyses are consistent enough to belong to the same person.
-        Pay close attention to key biometric identifiers: 'age', 'gender', 'hairColor', 'ethnicity', and 'facialHair'. Minor variations in 'emotion' are acceptable. Age should be very close (within a few years). Other features should match.
-        If the analyses are consistent, combine them into a single, definitive 'finalAnalysis' object, using the data from Analysis A as the primary source.
+        
+        **Primary Biometric Identifiers (Highest Importance):**
+        - 'age': Should be very close (within a few years).
+        - 'gender': Must match.
+        - 'hairColor': Must match.
+        - 'ethnicity': Must be consistent.
+        - 'facialHair': Must be consistent.
+        
+        **Secondary Identifiers (Lower Importance):**
+        - 'distinguishingMarks', 'faceShape', 'eyeColor', 'skinTone', 'emotion'.
+        These can vary slightly due to expression, lighting, or angle (e.g., braces visible in one smile but not in a neutral pose). Do not fail verification for minor discrepancies in these fields if the primary identifiers are a strong match.
+
+        If the primary analyses are consistent, combine them into a single, definitive 'finalAnalysis' object, using the data from Analysis A as the primary source.
         
         Analysis A: ${JSON.stringify(analysisA)}
         Analysis B: ${JSON.stringify(analysisB)}
