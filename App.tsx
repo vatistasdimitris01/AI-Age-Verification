@@ -137,8 +137,9 @@ const VerificationApp: React.FC = () => {
         context.save();
         context.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw video frame to canvas. The canvas element has `scale-x-[-1]` in CSS,
-        // so drawing the raw (unflipped) video frame results in a mirrored view for the user.
+        // Manually mirror the canvas context to create a "selfie" view.
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (results.faceLandmarks && results.faceLandmarks.length > 0) {
