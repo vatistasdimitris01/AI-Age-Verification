@@ -106,7 +106,7 @@ const VerificationUI: React.FC<VerificationUIProps> = ({
         )}
 
         <div className="relative w-[300px] h-[450px] sm:w-[320px] sm:h-[480px] rounded-3xl overflow-hidden bg-gray-900 flex items-center justify-center transition-all duration-300 shadow-xl">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full scale-x-[-1] object-cover"></video>
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full scale-x-[-1] object-cover hidden"></video>
             <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full scale-x-[-1]"></canvas>
 
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
