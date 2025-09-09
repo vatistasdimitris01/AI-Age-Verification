@@ -3,8 +3,9 @@ import { LEGAL_AGE } from '../constants';
 
 const IntegrationPage = () => {
     const vercelUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-deployment-url.vercel.app';
+    const [integrationType, setIntegrationType] = useState<'frontend' | 'backend'>('frontend');
     
-    const codeSnippet = `<!-- 1. Add the iframe to your page -->
+    const frontendSnippet = `<!-- 1. Add the iframe to your page -->
 <div id="age-verification-container" style="width: 450px; height: 750px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
   <iframe
     id="age-verification-iframe"
@@ -29,7 +30,6 @@ const IntegrationPage = () => {
       if (result.age >= ${LEGAL_AGE}) {
         alert('Success! Access granted.');
         // TODO: Add your logic to unlock content.
-        // e.g., document.getElementById('age-verification-container').style.display = 'none';
       } else {
         alert('Verification Failed: You do not meet the age requirement of ${LEGAL_AGE}.');
       }
@@ -38,14 +38,73 @@ const IntegrationPage = () => {
       alert('Verification could not be completed. Reason: ' + error);
     }
   });
-</script>`;
+<\/script>`;
+
+    const backendSnippet = `// This is a Node.js example using fetch.
+const API_URL = '${vercelUrl}/api/verify-age';
+
+// In a real application, you would capture these from a user's camera
+// during a liveness-checking process on your frontend and send them to your server.
+const imageFrames = [
+  '<base64_image_frame_1>',
+  '<base64_image_frame_2>',
+  // ... more frames ...
+];
+
+async function verifyUserAge(frames) {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ frames }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || \`API request failed with status \${response.status}\`);
+    }
+
+    const result = await response.json();
+    console.log('Verification Success:', result);
+    
+    const LEGAL_AGE = ${LEGAL_AGE};
+    if (result.age >= LEGAL_AGE) {
+      console.log('Access Granted.');
+      // TODO: Add your logic to grant access to content.
+    } else {
+      console.log('Access Denied: User does not meet the age requirement.');
+    }
+    
+    return result;
+
+  } catch (error) {
+    console.error('Verification Error:', error.message);
+  }
+}
+
+verifyUserAge(imageFrames);`;
+
 
     const [copied, setCopied] = useState(false);
     const copyToClipboard = () => {
-        navigator.clipboard.writeText(codeSnippet);
+        const snippet = integrationType === 'frontend' ? frontendSnippet : backendSnippet;
+        navigator.clipboard.writeText(snippet);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+    
+    const TabButton = ({ type, label }: { type: 'frontend' | 'backend', label: string }) => (
+         <button
+            onClick={() => setIntegrationType(type)}
+            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+                integrationType === type ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+        >
+            {label}
+        </button>
+    );
 
     return (
         <div className="min-h-screen w-full bg-gray-100 font-sans">
@@ -68,27 +127,32 @@ const IntegrationPage = () => {
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">Embed Verification Anywhere</h1>
                         <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                            Integrate our secure, AI-powered age verification flow into your website in just two steps using a simple iframe.
+                           Choose your integration method: a simple iframe for ease of use, or a powerful backend API for full control.
                         </p>
                     </div>
-
-                    <div className="space-y-8">
-                        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                            <div className="p-6 border-b border-gray-200">
-                                <h2 className="text-xl font-bold text-gray-900">Get The Code</h2>
-                                <p className="mt-1 text-gray-500">Copy and paste this snippet into your HTML file.</p>
+                     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">{integrationType === 'frontend' ? 'Frontend Integration' : 'Backend Integration'}</h2>
+                                <p className="mt-1 text-gray-500">{integrationType === 'frontend' ? 'Embed the full UI on your site with an iframe.' : 'Call our API from your server for a custom UI.'}</p>
                             </div>
-                            <div className="bg-gray-800 text-white p-4 relative font-mono text-sm">
-                                <button onClick={copyToClipboard} className="absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-3 rounded-md z-10 transition-colors">
-                                    {copied ? 'Copied!' : 'Copy'}
-                                </button>
-                                <pre className="overflow-x-auto"><code className="whitespace-pre-wrap text-xs sm:text-sm">{codeSnippet}</code></pre>
+                            <div className="flex-shrink-0 bg-gray-100 p-1 rounded-lg flex gap-1">
+                                <TabButton type="frontend" label="Frontend (iframe)" />
+                                <TabButton type="backend" label="Backend (API)" />
                             </div>
                         </div>
-
-                        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6">How It Works</h2>
-                            <ol className="space-y-6">
+                        <div className="bg-gray-800 text-white p-4 relative font-mono text-sm">
+                             <button onClick={copyToClipboard} className="absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-3 rounded-md z-10 transition-colors">
+                                {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                            <pre className="overflow-x-auto"><code className="whitespace-pre-wrap text-xs sm:text-sm">{integrationType === 'frontend' ? frontendSnippet : backendSnippet}</code></pre>
+                        </div>
+                    </div>
+                    
+                     <div className="mt-8 bg-white rounded-xl shadow-lg p-6 sm:p-8">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">How It Works</h2>
+                        {integrationType === 'frontend' ? (
+                             <ol className="space-y-6">
                                 <li className="flex items-start gap-4">
                                     <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">1</div>
                                     <div>
@@ -107,11 +171,36 @@ const IntegrationPage = () => {
                                      <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">3</div>
                                     <div>
                                         <h3 className="font-bold text-gray-800">Handle the Outcome</h3>
-                                        <p className="text-gray-600 mt-1">When the process is complete, the iframe sends a message with a <code>status</code> and a <code>result</code> or <code>error</code> object. Use this data to implement your business logic, such as granting access to age-restricted content.</p>
+                                        <p className="text-gray-600 mt-1">When the process is complete, the iframe sends a message with a <code>status</code> and a <code>result</code> or <code>error</code> object. Use this data to implement your business logic.</p>
                                     </div>
                                 </li>
                             </ol>
-                        </div>
+                        ) : (
+                             <ol className="space-y-6">
+                                <li className="flex items-start gap-4">
+                                    <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">1</div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">Capture Liveness Frames</h3>
+                                        <p className="text-gray-600 mt-1">On your own frontend, guide the user through a liveness check (e.g., looking center, turning their head) and capture several image frames as base64-encoded strings.</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-4">
+                                     <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">2</div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">Call API From Your Backend</h3>
+                                        <p className="text-gray-600 mt-1">Send the array of base64 image frames from your frontend to your server. From your server, make a secure POST request to the <code>/api/verify-age</code> endpoint.</p>
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-4">
+                                     <div className="bg-blue-100 text-blue-600 rounded-full h-10 w-10 flex-shrink-0 flex items-center justify-center font-bold text-lg">3</div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">Receive and Use Result</h3>
+                                        <p className="text-gray-600 mt-1">The API will perform the full liveness and verification flow. It will return either a final analysis object on success (200 OK) or a detailed error on failure. Use this result on your backend to control access to your content.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        )}
+                       
                     </div>
                 </div>
             </main>
